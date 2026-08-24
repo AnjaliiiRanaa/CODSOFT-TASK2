@@ -1,22 +1,4 @@
-"""
-Credit Card Fraud Detection
------------------------------
-Classifies a credit card transaction as fraudulent (1) or legitimate (0),
-using Logistic Regression, Decision Tree, and Random Forest — then picks
-the best model based on ROC-AUC (NOT plain accuracy — see README for why).
 
-Dataset: creditcard.csv (same one used for the CodSoft ML internship
-"Credit Card Fraud Detection" task, originally from Kaggle mlg-ulb/creditcardfraud).
-
-Columns:
-    Time    -> seconds since the first transaction in the dataset
-    V1-V28  -> anonymized features (already PCA-transformed by the dataset creator)
-    Amount  -> transaction amount
-    Class   -> 0 = legitimate, 1 = fraud   <-- this is what we predict
-
-Run:
-    python fraud_detection.py
-"""
 
 import pandas as pd
 import joblib
@@ -39,10 +21,7 @@ def main():
     print(f"Total transactions: {len(df)}")
     print(f"Fraud transactions: {df['Class'].sum()} ({df['Class'].mean()*100:.3f}%)")
 
-    # ---------------------------------------------------------
-    # 1. Scale 'Amount' and 'Time' (V1-V28 are already scaled via PCA)
-    #    Two separate scalers because they're different columns
-    # ---------------------------------------------------------
+
     amount_scaler = StandardScaler()
     time_scaler = StandardScaler()
     df["Amount_scaled"] = amount_scaler.fit_transform(df[["Amount"]])
@@ -52,19 +31,13 @@ def main():
     X = df.drop(columns=["Class"])
     y = df["Class"]
 
-    # ---------------------------------------------------------
-    # 2. Train/test split (stratify keeps the same fraud ratio in both sets)
-    # ---------------------------------------------------------
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     print(f"\nTrain size: {len(X_train)}, Test size: {len(X_test)}")
 
-    # ---------------------------------------------------------
-    # 3. Train 3 models — all with class_weight='balanced' because
-    #    fraud is <1% of the data, and a model that always predicts
-    #    "legit" would already score ~99% plain accuracy (but be useless)
-    # ---------------------------------------------------------
+
     models = {
         "Logistic Regression": LogisticRegression(max_iter=1000, class_weight="balanced"),
         "Decision Tree": DecisionTreeClassifier(class_weight="balanced", max_depth=8, random_state=42),
@@ -88,9 +61,6 @@ def main():
         print(confusion_matrix(y_test, preds))
         print(classification_report(y_test, preds, target_names=["Legit", "Fraud"], zero_division=0))
 
-    # ---------------------------------------------------------
-    # 4. Pick the best model by ROC-AUC (best at ranking fraud vs legit)
-    # ---------------------------------------------------------
     best_name = max(results, key=lambda n: results[n][1])
     best_model = results[best_name][0]
     print(f"\nBest model: {best_name} (ROC-AUC = {results[best_name][1]:.4f})")
